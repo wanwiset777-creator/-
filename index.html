@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจวัดระดับน้ำ | Water Level Monitoring System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Kanit for Thai language support -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Water & Alert Theme -->
+    <!-- Primary: Cyan-600 to Blue-800 -->
+    <!-- Alert: Amber-500 (Warning), Red-600 (Critical) -->
+    <!-- Background: Slate-50 -->
+
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #f8fafc; /* Slate-50 */
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        /* Chart Container Styling as per requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .sensor-pulse {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md fixed w-full z-50 top-0">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">🌊</span>
+                <div>
+                    <h1 class="font-bold text-lg text-cyan-700 leading-tight">RMUTL Flood Monitor</h1>
+                    <p class="text-xs text-slate-500">Engineering Project (บป.02)</p>
+                </div>
+            </div>
+            <div class="hidden md:flex gap-6 text-sm font-medium text-slate-600">
+                <a href="#dashboard" class="hover:text-cyan-600 transition">Dashboard</a>
+                <a href="#tech-specs" class="hover:text-cyan-600 transition">Technical Specs</a>
+                <a href="#team" class="hover:text-cyan-600 transition">Team</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Application Structure Plan:
+         1. Hero: Intro to the flash flood problem.
+         2. Dashboard: Live simulated cards for 1 River Unit & 2 Land Units.
+         3. Analytics: Chart.js graph showing trends (Google Sheets simulation).
+         4. Tech Specs: Details on ESP32, Solar, GPS.
+         5. Team: Credits.
+    -->
+
+    <!-- Hero Section -->
+    <header class="pt-24 pb-12 bg-gradient-to-br from-cyan-50 to-blue-100">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-4">ระบบตรวจวัดระดับน้ำและแจ้งเตือนอุทกภัย</h2>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto mb-6">
+                Water Level Monitoring System for River and Flood Area with Web-Based Display.
+                <br>นวัตกรรมเพื่อการเฝ้าระวังน้ำท่วมฉับพลันด้วยเทคโนโลยี IoT และการแสดงผลแบบ Real-time
+            </p>
+            <div class="flex justify-center gap-4">
+                <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm text-sm">
+                    <span class="w-3 h-3 bg-green-500 rounded-full sensor-pulse"></span>
+                    System Online
+                </div>
+                <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm text-sm">
+                    <span>📡</span>
+                    GPS Active
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="py-12 container mx-auto px-4">
+        <div class="mb-8 flex flex-col md:flex-row justify-between items-end gap-4">
+            <div>
+                <h3 class="text-2xl font-bold text-slate-800">สถานะระดับน้ำปัจจุบัน (Live Status)</h3>
+                <p class="text-slate-500 text-sm">อัปเดตข้อมูลล่าสุด: <span id="last-update">กำลังโหลด...</span></p>
+            </div>
+            <div class="text-right">
+                <span class="text-xs bg-slate-200 px-2 py-1 rounded text-slate-600">Data Source: Simulated NodeMCU/ESP32 Feed</span>
+            </div>
+        </div>
+
+        <!-- Sensor Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <!-- River Unit (Max 6m) -->
+            <div class="glass-panel p-6 rounded-xl border-t-4 border-cyan-500 relative overflow-hidden transition hover:-translate-y-1 duration-300">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="font-bold text-lg">สถานีแม่น้ำ (River Unit)</h4>
+                        <p class="text-xs text-slate-500">📍 GPS: 18.276, 99.492</p>
+                    </div>
+                    <span class="text-2xl">🌊</span>
+                </div>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <span id="river-level" class="text-4xl font-bold text-slate-800">--</span>
+                    <span class="text-slate-500">เมตร (Max 6m)</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2.5 mb-4">
+                    <div id="river-bar" class="bg-cyan-600 h-2.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span id="river-status" class="px-2 py-1 rounded bg-slate-100 text-slate-600 font-medium">รอข้อมูล...</span>
+                    <span class="flex items-center gap-1 text-slate-500">🔋 <span id="river-batt">--</span>%</span>
+                </div>
+            </div>
+
+            <!-- Land Unit 1 (Max 3m) -->
+            <div class="glass-panel p-6 rounded-xl border-t-4 border-emerald-500 relative overflow-hidden transition hover:-translate-y-1 duration-300">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="font-bold text-lg">พื้นที่ริมตลิ่ง 1 (Land A)</h4>
+                        <p class="text-xs text-slate-500">📍 GPS: 18.278, 99.495</p>
+                    </div>
+                    <span class="text-2xl">🏡</span>
+                </div>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <span id="land1-level" class="text-4xl font-bold text-slate-800">--</span>
+                    <span class="text-slate-500">เมตร (Max 3m)</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2.5 mb-4">
+                    <div id="land1-bar" class="bg-emerald-600 h-2.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span id="land1-status" class="px-2 py-1 rounded bg-slate-100 text-slate-600 font-medium">รอข้อมูล...</span>
+                    <span class="flex items-center gap-1 text-slate-500">🔋 <span id="land1-batt">--</span>%</span>
+                </div>
+            </div>
+
+            <!-- Land Unit 2 (Max 3m) -->
+            <div class="glass-panel p-6 rounded-xl border-t-4 border-emerald-500 relative overflow-hidden transition hover:-translate-y-1 duration-300">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="font-bold text-lg">พื้นที่ริมตลิ่ง 2 (Land B)</h4>
+                        <p class="text-xs text-slate-500">📍 GPS: 18.275, 99.490</p>
+                    </div>
+                    <span class="text-2xl">🚜</span>
+                </div>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <span id="land2-level" class="text-4xl font-bold text-slate-800">--</span>
+                    <span class="text-slate-500">เมตร (Max 3m)</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2.5 mb-4">
+                    <div id="land2-bar" class="bg-emerald-600 h-2.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span id="land2-status" class="px-2 py-1 rounded bg-slate-100 text-slate-600 font-medium">รอข้อมูล...</span>
+                    <span class="flex items-center gap-1 text-slate-500">🔋 <span id="land2-batt">--</span>%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualization & Content Choices:
+             Goal: Visualize trends over time as mentioned in the report (Google Sheets data visualization).
+             Method: Chart.js Line Chart.
+             Justification: Allows users to see if water is rising rapidly (Flash Flood).
+        -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-800">แนวโน้มระดับน้ำ (Water Level Trend)</h3>
+                <div class="flex gap-2 text-sm">
+                    <button onclick="updateChartFilter('all')" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded transition">ทั้งหมด</button>
+                    <button onclick="updateChartFilter('river')" class="px-3 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-800 rounded transition">แม่น้ำ</button>
+                    <button onclick="updateChartFilter('land')" class="px-3 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded transition">ริมตลิ่ง</button>
+                </div>
+            </div>
+            <!-- Chart Container -->
+            <div class="chart-container">
+                <canvas id="waterLevelChart"></canvas>
+            </div>
+            <p class="text-center text-xs text-slate-400 mt-4">กราฟแสดงข้อมูลย้อนหลังจำลอง 1 ชั่วโมง (Simulated 1 Hour History)</p>
+        </div>
+    </section>
+
+    <!-- Technical Specs Section -->
+    <section id="tech-specs" class="py-12 bg-slate-100">
+        <div class="container mx-auto px-4">
+            <h3 class="text-2xl font-bold text-slate-800 mb-8 text-center">องค์ประกอบทางเทคนิค (System Architecture)</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Hardware -->
+                <div class="bg-white p-5 rounded-lg shadow-sm">
+                    <div class="text-3xl mb-3">🤖</div>
+                    <h4 class="font-bold mb-2">Microcontroller</h4>
+                    <p class="text-sm text-slate-600">ใช้ <strong>ESP32</strong> และ <strong>Node MCU</strong> เป็นสมองกลหลักในการประมวลผลและส่งข้อมูลผ่าน Wi-Fi</p>
+                </div>
+                
+                <!-- Sensors -->
+                <div class="bg-white p-5 rounded-lg shadow-sm">
+                    <div class="text-3xl mb-3">📡</div>
+                    <h4 class="font-bold mb-2">Ultrasonic Sensors</h4>
+                    <p class="text-sm text-slate-600">วัดระยะห่างจากผิวน้ำ แม่นยำสูง ติดตั้งแม่น้ำ (6m) และบนบก (3m) เพื่อตรวจจับน้ำท่วม</p>
+                </div>
+
+                <!-- Power & GPS -->
+                <div class="bg-white p-5 rounded-lg shadow-sm">
+                    <div class="text-3xl mb-3">☀️</div>
+                    <h4 class="font-bold mb-2">Power & Location</h4>
+                    <p class="text-sm text-slate-600">พลังงานสะอาดจาก <strong>Solar Cell</strong> พร้อมแบตเตอรี่สำรอง และระบุพิกัดจุดติดตั้งด้วย <strong>GPS</strong></p>
+                </div>
+
+                <!-- Data & Web -->
+                <div class="bg-white p-5 rounded-lg shadow-sm">
+                    <div class="text-3xl mb-3">☁️</div>
+                    <h4 class="font-bold mb-2">Cloud & Display</h4>
+                    <p class="text-sm text-slate-600">บันทึกข้อมูลลง <strong>Google Sheets</strong> และแสดงผล Real-time ผ่านหน้าเว็บไซต์นี้</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About / Team Section -->
+    <section id="team" class="py-12 container mx-auto px-4 border-t border-slate-200">
+        <div class="text-center mb-10">
+            <h3 class="text-2xl font-bold text-slate-800">คณะผู้จัดทำ (Project Team)</h3>
+            <p class="text-slate-500">คณะวิศวกรรมศาสตร์ มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา ลำปาง</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <!-- Students -->
+            <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                <h4 class="font-bold text-lg text-cyan-700 mb-4 border-b pb-2">ผู้เสนอโครงงาน</h4>
+                <ul class="space-y-3 text-slate-700">
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 bg-cyan-400 rounded-full"></span> นายวันวิเศษ ฟันอ้น</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 bg-cyan-400 rounded-full"></span> นายธีรภัทร กลเรียน</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 bg-cyan-400 rounded-full"></span> นายอลงกรณ์ เลี้ยงไกรลาศ</li>
+                </ul>
+            </div>
+
+            <!-- Advisors -->
+            <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                <h4 class="font-bold text-lg text-slate-700 mb-4 border-b pb-2">อาจารย์ที่ปรึกษา</h4>
+                <ul class="space-y-3 text-slate-700">
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 bg-slate-400 rounded-full"></span> ผศ.ปณิฐิ แสนจิตร</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 bg-slate-400 rounded-full"></span> รศ.วันไชย คำเสน</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 bg-slate-400 rounded-full"></span> อ.ประสงค์ วงศ์ชัยบุตร</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-sm">
+        <p>&copy; 2026 RMUTL Engineering Project. All rights reserved.</p>
+        <p>ข้อมูลจำลองเพื่อการสาธิตโครงงาน (Data simulated for project demonstration)</p>
+    </footer>
+
+    <!-- JavaScript Implementation -->
+    <script>
+        // --- State Management ---
+        const stations = {
+            river: { id: 'river', name: 'River Unit', max: 6.0, current: 2.5, battery: 98, history: [] },
+            land1: { id: 'land1', name: 'Land Unit 1', max: 3.0, current: 0.0, battery: 85, history: [] },
+            land2: { id: 'land2', name: 'Land Unit 2', max: 3.0, current: 0.0, battery: 92, history: [] }
+        };
+
+        let chartInstance = null;
+
+        // Initialize Data History (Simulate past hour)
+        function initHistory() {
+            const now = new Date();
+            for (let i = 10; i >= 0; i--) {
+                const timeLabel = new Date(now.getTime() - i * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                stations.river.history.push(2.0 + Math.random() * 0.5);
+                stations.land1.history.push(0);
+                stations.land2.history.push(0);
+                // Keep chart labels global for simplicity in this demo
+                if (!window.chartLabels) window.chartLabels = [];
+                window.chartLabels.push(timeLabel);
+            }
+        }
+
+        // --- Core Interaction Logic ---
+        
+        // 1. Simulate Data Updates (This simulates the NodeMCU sending data to Google Sheets/Web)
+        function updateSensorData() {
+            // Simulate random fluctuation
+            // River: Fluctuate around 2.5m, occasionally spike for "flood" demo effect if needed
+            const riverChange = (Math.random() - 0.5) * 0.1; 
+            stations.river.current = Math.max(0, Math.min(stations.river.max, stations.river.current + riverChange));
+            
+            // Land: Mostly 0 (Dry), small chance of rain detection
+            if(Math.random() > 0.9) {
+                stations.land1.current = Math.min(stations.land1.max, stations.land1.current + 0.05);
+            } else {
+                stations.land1.current = Math.max(0, stations.land1.current - 0.02);
+            }
+            
+            stations.land2.current = Math.max(0, stations.land2.current + (Math.random() - 0.6) * 0.02); // Mostly dry
+
+            // Update Battery (Slow drain, solar charge during day)
+            stations.river.battery = Math.max(0, Math.min(100, stations.river.battery - 0.01));
+            stations.land1.battery = Math.max(0, Math.min(100, stations.land1.battery - 0.01));
+            stations.land2.battery = Math.max(0, Math.min(100, stations.land2.battery - 0.01));
+
+            // Update UI
+            updateUI('river', stations.river);
+            updateUI('land1', stations.land1);
+            updateUI('land2', stations.land2);
+
+            // Update Chart Data
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (chartInstance) {
+                const labels = chartInstance.data.labels;
+                const riverData = chartInstance.data.datasets[0].data;
+                const land1Data = chartInstance.data.datasets[1].data;
+                const land2Data = chartInstance.data.datasets[2].data;
+
+                // Shift data queue
+                if (labels.length > 20) {
+                    labels.shift();
+                    riverData.shift();
+                    land1Data.shift();
+                    land2Data.shift();
+                }
+
+                labels.push(timeString);
+                riverData.push(stations.river.current);
+                land1Data.push(stations.land1.current);
+                land2Data.push(stations.land2.current);
+
+                chartInstance.update();
+            }
+
+            document.getElementById('last-update').innerText = timeString;
+        }
+
+        // 2. Update UI Elements based on thresholds
+        function updateUI(id, data) {
+            // Text values
+            document.getElementById(`${id}-level`).innerText = data.current.toFixed(2);
+            document.getElementById(`${id}-batt`).innerText = Math.floor(data.battery);
+
+            // Progress Bar
+            const percent = (data.current / data.max) * 100;
+            const bar = document.getElementById(`${id}-bar`);
+            bar.style.width = `${percent}%`;
+
+            // Status Logic & Coloring
+            const statusEl = document.getElementById(`${id}-status`);
+            const cardBorder = document.getElementById(`${id}-level`).closest('.glass-panel');
+
+            // Thresholds (Example logic)
+            // River: > 4m Warning, > 5m Critical
+            // Land: > 0.2m Warning (Flood starts)
+            
+            let status = 'ปกติ (Normal)';
+            let colorClass = 'bg-cyan-600';
+            let statusBg = 'bg-emerald-100 text-emerald-700';
+            let borderColor = 'border-t-4 border-emerald-500'; // Default Green
+
+            if (id === 'river') {
+                if (data.current > 5.0) {
+                    status = 'วิกฤต (Critical)';
+                    colorClass = 'bg-red-600';
+                    statusBg = 'bg-red-100 text-red-700 animate-pulse';
+                    borderColor = 'border-t-4 border-red-600';
+                } else if (data.current > 3.5) {
+                    status = 'เฝ้าระวัง (Warning)';
+                    colorClass = 'bg-amber-500';
+                    statusBg = 'bg-amber-100 text-amber-700';
+                    borderColor = 'border-t-4 border-amber-500';
+                } else {
+                    colorClass = 'bg-cyan-600'; // River default blue
+                    borderColor = 'border-t-4 border-cyan-500';
+                }
+            } else {
+                // Land logic
+                if (data.current > 0.5) {
+                    status = 'น้ำท่วม (Flood)';
+                    colorClass = 'bg-red-600';
+                    statusBg = 'bg-red-100 text-red-700 animate-pulse';
+                    borderColor = 'border-t-4 border-red-600';
+                } else if (data.current > 0.1) {
+                    status = 'มีน้ำขัง (Water detected)';
+                    colorClass = 'bg-amber-500';
+                    statusBg = 'bg-amber-100 text-amber-700';
+                    borderColor = 'border-t-4 border-amber-500';
+                }
+            }
+
+            bar.className = `${colorClass} h-2.5 rounded-full transition-all duration-1000`;
+            statusEl.innerText = status;
+            statusEl.className = `px-2 py-1 rounded font-medium text-xs ${statusBg}`;
+            // Reset border classes and add new one (simplified for vanilla JS)
+            // Note: In a full framework, we'd bind classes. Here we handle visually via bar color mainly to avoid complex classList manipulation.
+        }
+
+        // 3. Chart Initialization
+        function initChart() {
+            const ctx = document.getElementById('waterLevelChart').getContext('2d');
+            
+            // Gradient Fills
+            const gradientRiver = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientRiver.addColorStop(0, 'rgba(6, 182, 212, 0.5)'); // Cyan
+            gradientRiver.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: window.chartLabels,
+                    datasets: [
+                        {
+                            label: 'แม่น้ำ (River)',
+                            data: stations.river.history,
+                            borderColor: '#0891b2', // Cyan-600
+                            backgroundColor: gradientRiver,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'ริมตลิ่ง 1 (Land A)',
+                            data: stations.land1.history,
+                            borderColor: '#10b981', // Emerald-500
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderDash: [5, 5],
+                            tension: 0.4
+                        },
+                        {
+                            label: 'ริมตลิ่ง 2 (Land B)',
+                            data: stations.land2.history,
+                            borderColor: '#059669', // Emerald-600
+                            backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                            borderDash: [2, 2],
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Critical for Tailwind container control
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'ระดับน้ำ (เมตร)' },
+                            suggestedMax: 6
+                        },
+                        x: {
+                            ticks: { maxTicksLimit: 8 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' ม.';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. Chart Filtering
+        function updateChartFilter(type) {
+            if (!chartInstance) return;
+            
+            chartInstance.data.datasets.forEach((dataset, index) => {
+                if (type === 'all') {
+                    chartInstance.show(index);
+                } else if (type === 'river') {
+                    index === 0 ? chartInstance.show(index) : chartInstance.hide(index);
+                } else if (type === 'land') {
+                    index !== 0 ? chartInstance.show(index) : chartInstance.hide(index);
+                }
+            });
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            initHistory();
+            initChart();
+            updateSensorData(); // First run
+            
+            // Simulate Data Interval (Every 2 seconds)
+            setInterval(updateSensorData, 2000);
+        });
+
+    </script>
+    
+    <!-- CONFIRMATION: NO SVG graphics used (Chart.js Canvas used). NO Mermaid JS used. -->
+</body>
+</html>
