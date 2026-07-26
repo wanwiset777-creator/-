@@ -1,22 +1,25 @@
-/* ==========================
-   RESET
-========================== */
+/* =====================================
+RESET
+===================================== */
 
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:'Segoe UI',sans-serif;
+    font-family:"Segoe UI",Tahoma,sans-serif;
 }
 
 body{
-    background:#eef3f9;
-    color:#1f2937;
+
+    background:#eef3f8;
+
+    color:#333;
+
 }
 
-/* ==========================
+/* =====================================
 HEADER
-========================== */
+===================================== */
 
 header{
 
@@ -24,15 +27,15 @@ header{
 
     color:#fff;
 
+    padding:20px;
+
     display:flex;
 
     justify-content:space-between;
 
     align-items:center;
 
-    padding:18px 30px;
-
-    box-shadow:0 2px 10px rgba(0,0,0,.15);
+    box-shadow:0 3px 10px rgba(0,0,0,.15);
 
 }
 
@@ -48,41 +51,39 @@ header{
 
     font-size:18px;
 
-    font-weight:600;
+    font-weight:bold;
 
 }
 
-/* ==========================
+/* =====================================
 TITLE
-========================== */
+===================================== */
 
-.title{
+.hero{
 
     text-align:center;
 
-    padding:30px 20px;
+    padding:35px;
 
 }
 
-.title h1{
+.hero h1{
 
     color:#0f4c81;
 
-    font-size:34px;
+    margin-bottom:10px;
 
 }
 
-.title p{
+.hero p{
 
-    margin-top:10px;
-
-    color:#6b7280;
+    color:#777;
 
 }
 
-/* ==========================
-CARD
-========================== */
+/* =====================================
+DASHBOARD
+===================================== */
 
 .dashboard{
 
@@ -92,19 +93,19 @@ CARD
 
     gap:20px;
 
-    padding:25px;
+    padding:20px;
 
 }
 
 .card{
 
-    background:#fff;
+    background:white;
 
-    border-radius:18px;
+    border-radius:15px;
 
     padding:20px;
 
-    box-shadow:0 6px 18px rgba(0,0,0,.1);
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
 
 }
 
@@ -112,21 +113,25 @@ CARD
 
     display:inline-block;
 
-    background:#2563eb;
-
-    color:#fff;
+    color:white;
 
     padding:8px 18px;
 
-    border-radius:30px;
+    border-radius:25px;
 
     font-weight:bold;
 
 }
 
+.blue{
+
+    background:#2563eb;
+
+}
+
 .green{
 
-    background:#16a34a;
+    background:#22c55e;
 
 }
 
@@ -148,11 +153,9 @@ CARD
 
     text-align:center;
 
-    font-size:46px;
+    font-size:42px;
 
     font-weight:bold;
-
-    margin-bottom:18px;
 
 }
 
@@ -164,21 +167,15 @@ CARD
 
 .status{
 
-    padding:10px;
-
-    border-radius:10px;
+    margin-top:15px;
 
     text-align:center;
 
+    padding:12px;
+
+    border-radius:10px;
+
     font-weight:bold;
-
-}
-
-.gray{
-
-    background:#e5e7eb;
-
-    color:#374151;
 
 }
 
@@ -192,7 +189,7 @@ CARD
 
 .warning{
 
-    background:#fef3c7;
+    background:#fde68a;
 
     color:#92400e;
 
@@ -206,16 +203,24 @@ CARD
 
 }
 
+.gray{
+
+    background:#e5e7eb;
+
+    color:#555;
+
+}
+
 canvas{
 
     margin-top:20px;
 
-    height:220px!important;
+    height:220px !important;
 
 }
-/* ==========================
+/* =====================================
 SUMMARY
-========================== */
+===================================== */
 
 .summary{
 
@@ -225,20 +230,20 @@ SUMMARY
 
     gap:20px;
 
-    padding:0 25px 25px;
+    padding:20px;
 
 }
 
 .info-card,
 .map-card{
 
-    background:#ffffff;
+    background:#fff;
 
-    border-radius:18px;
+    border-radius:15px;
 
     padding:20px;
 
-    box-shadow:0 6px 18px rgba(0,0,0,.1);
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
 
 }
 
@@ -251,7 +256,7 @@ SUMMARY
 
 }
 
-.info-card table{
+.info-table{
 
     width:100%;
 
@@ -259,15 +264,15 @@ SUMMARY
 
 }
 
-.info-card td{
+.info-table td{
 
     padding:12px;
 
-    border-bottom:1px solid #ececec;
+    border-bottom:1px solid #eeeeee;
 
 }
 
-.info-card td:first-child{
+.info-table td:first-child{
 
     font-weight:bold;
 
@@ -275,7 +280,7 @@ SUMMARY
 
 }
 
-.info-card td:last-child{
+.info-table td:last-child{
 
     text-align:right;
 
@@ -287,27 +292,53 @@ SUMMARY
 
     width:100%;
 
-    height:380px;
+    height:420px;
 
-    border-radius:15px;
+    border-radius:12px;
 
 }
 
-/* ==========================
-HISTORY TABLE
-========================== */
+/* =====================================
+HISTORY
+===================================== */
 
 .history{
 
-    padding:25px;
+    padding:20px;
 
 }
 
-.history h2{
+.history-header{
 
-    color:#0f4c81;
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
 
     margin-bottom:20px;
+
+}
+
+.history-header button{
+
+    background:#2563eb;
+
+    color:white;
+
+    border:none;
+
+    padding:10px 18px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+}
+
+.history-header button:hover{
+
+    background:#1d4ed8;
 
 }
 
@@ -315,15 +346,15 @@ HISTORY TABLE
 
     width:100%;
 
+    background:white;
+
     border-collapse:collapse;
 
-    background:#ffffff;
-
-    border-radius:18px;
+    border-radius:15px;
 
     overflow:hidden;
 
-    box-shadow:0 6px 18px rgba(0,0,0,.1);
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
 
 }
 
@@ -359,13 +390,13 @@ HISTORY TABLE
 
 #historyTable tbody tr:hover{
 
-    background:#eaf3ff;
+    background:#e8f1ff;
 
 }
 
-/* ==========================
+/* =====================================
 FOOTER
-========================== */
+===================================== */
 
 footer{
 
@@ -375,13 +406,13 @@ footer{
 
     color:white;
 
+    padding:25px 35px;
+
     display:flex;
 
     justify-content:space-between;
 
     align-items:center;
-
-    padding:25px 35px;
 
 }
 
@@ -391,17 +422,33 @@ footer{
 
 }
 
-.online{
+.system-status{
 
-    color:#22c55e;
+    display:flex;
 
-    font-weight:bold;
+    align-items:center;
+
+    gap:10px;
+
+    margin-bottom:10px;
 
 }
 
-/* ==========================
+.online-dot{
+
+    width:12px;
+
+    height:12px;
+
+    border-radius:50%;
+
+    background:#22c55e;
+
+}
+
+/* =====================================
 LOADING
-========================== */
+===================================== */
 
 .loading{
 
@@ -409,7 +456,7 @@ LOADING
 
     inset:0;
 
-    background:rgba(255,255,255,.9);
+    background:rgba(255,255,255,.92);
 
     display:none;
 
@@ -455,9 +502,9 @@ LOADING
 
 }
 
-/* ==========================
+/* =====================================
 NOTIFICATION
-========================== */
+===================================== */
 
 .notify{
 
@@ -481,11 +528,11 @@ NOTIFICATION
 
 }
 
-/* ==========================
+/* =====================================
 RESPONSIVE
-========================== */
+===================================== */
 
-@media(max-width:1100px){
+@media(max-width:1200px){
 
 .dashboard{
 
@@ -513,7 +560,7 @@ text-align:center;
 
 }
 
-.title h1{
+.hero h1{
 
 font-size:26px;
 
@@ -529,9 +576,9 @@ footer{
 
 flex-direction:column;
 
-gap:15px;
-
 text-align:center;
+
+gap:15px;
 
 }
 
