@@ -1,111 +1,220 @@
-// URL ของ Apps Script
-const API_URL = "https://script.google.com/macros/s/AKfycbxVn_4dimc2nIuRkYIyQq6562--1chPWzX6preYVj0dooyY8BqiXEQnn-5nqAytjp4B/exec";
+<!DOCTYPE html>
+<html lang="th">
 
-let riverChart;
+<head>
 
-async function loadData() {
+<meta charset="UTF-8">
 
-    try {
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        const response = await fetch(API_URL);
-        const data = await response.json();
+<title>RMUTL Flood Monitoring Dashboard</title>
 
-        if (!data.length) return;
+<link rel="stylesheet" href="style.css">
 
-        // ข้อมูลล่าสุด
-        const last = data[data.length - 1];
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-        //==============================
-        // ระดับน้ำ
-        //==============================
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        document.getElementById("riverLevel").innerHTML =
-            Number(last.distance).toFixed(2);
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        //==============================
-        // เวลาอัปเดต
-        //==============================
+</head>
 
-        document.getElementById("updateTime").innerHTML =
-            new Date(last.time).toLocaleString("th-TH");
+<body>
 
-        //==============================
-        // ดาวเทียม
-        //==============================
+<header>
 
-        document.getElementById("satellite").innerHTML =
-            last.satellites;
+<div class="logo">
 
-        //==============================
-        // แผนที่
-        //==============================
+🌊 RMUTL Flood Monitoring Dashboard
 
-        updateMarker(last.latitude, last.longitude);
+</div>
 
-        //==============================
-        // กราฟ
-        //==============================
+<div id="clock">
 
-        const labels = data.slice(-20).map(i => {
+--:--:--
 
-            return new Date(i.time).toLocaleTimeString("th-TH");
+</div>
 
-        });
+</header>
 
-        const values = data.slice(-20).map(i => i.distance);
+<section class="hero">
 
-        riverChart.data.labels = labels;
-        riverChart.data.datasets[0].data = values;
-        riverChart.update();
+<h1>
 
-    }
+ระบบตรวจวัดระดับน้ำแบบ Real-time
 
-    catch (err) {
+</h1>
 
-        console.log(err);
+<p>
 
-    }
+Rajamangala University of Technology Lanna
 
-}
+</p>
 
-setInterval(loadData,10000);
-loadData();
-<!-- ===================== -->
+</section>
+
+<section class="dashboard">
+
+<!-- ====================== -->
+<!-- STATION 01 -->
+<!-- ====================== -->
+
+<div class="card">
+
+<div class="station blue">
+
+STATION 01
+
+</div>
+
+<h2>
+
+ระดับน้ำในแม่น้ำ
+
+</h2>
+
+<div class="value">
+
+<span id="riverValue">
+
+0.00
+
+</span>
+
+เมตร
+
+</div>
+
+<div id="riverStatus" class="status normal">
+
+กำลังโหลด...
+
+</div>
+
+<canvas id="riverChart"></canvas>
+
+</div>
+
+<!-- ====================== -->
+<!-- STATION 02 -->
+<!-- ====================== -->
+
+<div class="card">
+
+<div class="station green">
+
+STATION 02
+
+</div>
+
+<h2>
+
+พื้นที่น้ำท่วม จุดที่ 1
+
+</h2>
+
+<div class="value">
+
+<span id="land1Value">
+
+0.00
+
+</span>
+
+เมตร
+
+</div>
+
+<div class="status gray">
+
+ยังไม่ติดตั้ง
+
+</div>
+
+<canvas id="land1Chart"></canvas>
+
+</div>
+
+<!-- ====================== -->
+<!-- STATION 03 -->
+<!-- ====================== -->
+
+<div class="card">
+
+<div class="station orange">
+
+STATION 03
+
+</div>
+
+<h2>
+
+พื้นที่น้ำท่วม จุดที่ 2
+
+</h2>
+
+<div class="value">
+
+<span id="land2Value">
+
+0.00
+
+</span>
+
+เมตร
+
+</div>
+
+<div class="status gray">
+
+ยังไม่ติดตั้ง
+
+</div>
+
+<canvas id="land2Chart"></canvas>
+
+</div>
+
+</section>
+<!-- ===================================== -->
 <!-- SUMMARY -->
-<!-- ===================== -->
+<!-- ===================================== -->
 
 <section class="summary">
 
+    <!-- ข้อมูลล่าสุด -->
     <div class="info-card">
 
         <h2>📊 ข้อมูลล่าสุด</h2>
 
-        <table>
+        <table class="info-table">
 
             <tr>
-                <td>เวลาอัปเดต</td>
+                <td>🕒 เวลาอัปเดต</td>
                 <td id="lastTime">--</td>
             </tr>
 
             <tr>
-                <td>Latitude</td>
+                <td>📍 Latitude</td>
                 <td id="lastLat">--</td>
             </tr>
 
             <tr>
-                <td>Longitude</td>
+                <td>📍 Longitude</td>
                 <td id="lastLng">--</td>
             </tr>
 
             <tr>
-                <td>Satellite</td>
+                <td>🛰️ จำนวนดาวเทียม</td>
                 <td id="lastSat">0</td>
             </tr>
 
             <tr>
-                <td>ระดับน้ำ</td>
+                <td>🌊 ระดับน้ำ</td>
                 <td>
-                    <span id="lastDistance">0.00</span> เมตร
+                    <span id="lastDistance">0.00</span>
+                    เมตร
                 </td>
             </tr>
 
@@ -113,9 +222,10 @@ loadData();
 
     </div>
 
+    <!-- แผนที่ -->
     <div class="map-card">
 
-        <h2>📍 ตำแหน่งล่าสุด</h2>
+        <h2>📍 ตำแหน่ง Station 01</h2>
 
         <div id="map"></div>
 
@@ -123,13 +233,23 @@ loadData();
 
 </section>
 
-<!-- ===================== -->
+<!-- ===================================== -->
 <!-- HISTORY -->
-<!-- ===================== -->
+<!-- ===================================== -->
 
 <section class="history">
 
-    <h2>ข้อมูลย้อนหลัง</h2>
+    <div class="history-header">
+
+        <h2>📋 ข้อมูลย้อนหลัง</h2>
+
+        <button onclick="loadData()">
+
+            รีเฟรชข้อมูล
+
+        </button>
+
+    </div>
 
     <table id="historyTable">
 
@@ -159,9 +279,9 @@ loadData();
 
 </section>
 
-<!-- ===================== -->
+<!-- ===================================== -->
 <!-- LOADING -->
-<!-- ===================== -->
+<!-- ===================================== -->
 
 <div id="loading" class="loading">
 
@@ -174,11 +294,9 @@ loadData();
     </p>
 
 </div>
-
-<!-- END PART 2 -->
-<!-- ===================== -->
+<!-- ===================================== -->
 <!-- FOOTER -->
-<!-- ===================== -->
+<!-- ===================================== -->
 
 <footer>
 
@@ -187,24 +305,20 @@ loadData();
         <h3>RMUTL Flood Monitoring Dashboard</h3>
 
         <p>
-            ระบบติดตามระดับน้ำแบบ Real-time
+            ระบบตรวจวัดระดับน้ำแบบ Real-time
         </p>
 
     </div>
 
     <div class="footer-right">
 
-        <p>
+        <div class="system-status">
 
-            สถานะระบบ
+            <span class="online-dot"></span>
 
-            <span class="online">
+            <span>ONLINE</span>
 
-                ● ONLINE
-
-            </span>
-
-        </p>
+        </div>
 
         <p>
 
@@ -222,9 +336,9 @@ loadData();
 
 </footer>
 
-<!-- ===================== -->
+<!-- ===================================== -->
 <!-- NOTIFICATION -->
-<!-- ===================== -->
+<!-- ===================================== -->
 
 <div id="notify" class="notify">
 
@@ -232,9 +346,9 @@ loadData();
 
 </div>
 
-<!-- ===================== -->
-<!-- JAVASCRIPT -->
-<!-- ===================== -->
+<!-- ===================================== -->
+<!-- SCRIPT -->
+<!-- ===================================== -->
 
 <script src="script.js"></script>
 
