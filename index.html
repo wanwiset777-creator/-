@@ -1,494 +1,171 @@
-<!DOCTYPE html>
-<html lang="th">
+// URL ของ Apps Script
+const API_URL = "https://script.google.com/macros/s/AKfycbxVn_4dimc2nIuRkYIyQq6562--1chPWzX6preYVj0dooyY8BqiXEQnn-5nqAytjp4B/exec";
 
-<head>
+let riverChart;
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+async function loadData() {
 
-<title>RMUTL Flood Monitor</title>
+    try {
 
-<!-- Tailwind -->
-<script src="https://cdn.tailwindcss.com"></script>
+        const response = await fetch(API_URL);
+        const data = await response.json();
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        if (!data.length) return;
 
-<!-- Google Font -->
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        // ข้อมูลล่าสุด
+        const last = data[data.length - 1];
 
-<!-- FontAwesome -->
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+        //==============================
+        // ระดับน้ำ
+        //==============================
 
-<!-- CSS -->
-<link rel="stylesheet" href="style.css">
+        document.getElementById("riverLevel").innerHTML =
+            Number(last.distance).toFixed(2);
 
-</head>
+        //==============================
+        // เวลาอัปเดต
+        //==============================
 
-<body>
+        document.getElementById("updateTime").innerHTML =
+            new Date(last.time).toLocaleString("th-TH");
 
-<!-- ================= HEADER ================= -->
+        //==============================
+        // ดาวเทียม
+        //==============================
 
-<header class="header">
+        document.getElementById("satellite").innerHTML =
+            last.satellites;
 
-<div class="logo">
+        //==============================
+        // แผนที่
+        //==============================
 
-<div class="logo-icon">
+        updateMarker(last.latitude, last.longitude);
 
-🌊
+        //==============================
+        // กราฟ
+        //==============================
 
-</div>
+        const labels = data.slice(-20).map(i => {
 
-<div>
+            return new Date(i.time).toLocaleTimeString("th-TH");
 
-<h1>RMUTL Flood Monitor</h1>
+        });
 
-<p>ENGINEERING PROJECT</p>
+        const values = data.slice(-20).map(i => i.distance);
 
-</div>
+        riverChart.data.labels = labels;
+        riverChart.data.datasets[0].data = values;
+        riverChart.update();
 
-</div>
+    }
 
-<div class="header-right">
+    catch (err) {
 
-<div id="clock">
+        console.log(err);
 
-00/00/0000 00:00:00
+    }
 
-</div>
+}
 
-<div class="live">
-
-<span class="dot"></span>
-
-Live System
-
-</div>
-
-</div>
-
-</header>
-
-<!-- ================= TITLE ================= -->
-
-<section class="top-title">
-
-<div>
-
-<h2>
-
-ระบบตรวจวัดระดับน้ำในแม่น้ำและพื้นที่น้ำท่วมแสดงผลผ่านเว็บไซต์
-
-</h2>
-
-<p>
-
-แสดงผลข้อมูลแบบ Real-time และเรียกดูประวัติย้อนหลัง
-
-</p>
-
-</div>
-
-<div>
-
-<input
-
-type="date"
-
-id="historyDate"
-
-class="date-picker"
-
->
-
-</div>
-
-</section>
-
-<!-- ================= CARD AREA ================= -->
-
-<section class="card-container">
-
-<!-- ================= STATION 01 ================= -->
-
-<div class="station blue">
-
-<div class="station-header">
-
-<div class="station-badge">
-
-STATION 01
-
-</div>
-
-<a id="riverMap" href="#" target="_blank">
-
-📍 ดูตำแหน่ง
-
-</a>
-
-</div>
-
-<h3>
-
-สถานีแม่น้ำ (River)
-
-</h3>
-
-<div class="water-value">
-
-<span id="riverValue">
-
-0.00
-
-</span>
-
-<span class="unit">
-
-/6.00 ม.
-
-</span>
-
-</div>
-
-<div
-
-id="riverStatus"
-
-class="status warning">
-
-กำลังโหลด...
-
-</div>
-
-<div class="chart-box">
-
-<canvas id="riverChart"></canvas>
-
-</div>
-
-</div>
-
-<!-- ================= STATION 02 ================= -->
-
-<div class="station green">
-
-<div class="station-header">
-
-<div class="station-badge green-badge">
-
-STATION 02
-
-</div>
-
-<a id="land1Map" href="#" target="_blank">
-
-📍 ดูตำแหน่ง
-
-</a>
-
-</div>
-
-<h3>
-
-พื้นที่ริมตลิ่ง 1 (Land)
-
-</h3>
-
-<div class="water-value">
-
-<span id="land1Value">
-
-0.00
-
-</span>
-
-<span class="unit">
-
-/3.00 ม.
-
-</span>
-
-</div>
-
-<div
-
-id="land1Status"
-
-class="status normal">
-
-ปกติ
-
-</div>
-
-<div class="chart-box">
-
-<canvas id="land1Chart"></canvas>
-
-</div>
-
-</div>
-
-<!-- END PART 1 -->
-  <!-- ================= STATION 03 ================= -->
-
-<div class="station orange">
-
-    <div class="station-header">
-
-        <div class="station-badge orange-badge">
-
-            STATION 03
-
-        </div>
-
-        <a id="land2Map" href="#" target="_blank">
-
-            📍 ดูตำแหน่ง
-
-        </a>
-
-    </div>
-
-    <h3>
-
-        พื้นที่ริมตลิ่ง 2 (Land)
-
-    </h3>
-
-    <div class="water-value">
-
-        <span id="land2Value">
-
-            0.00
-
-        </span>
-
-        <span class="unit">
-
-            /3.00 ม.
-
-        </span>
-
-    </div>
-
-    <div
-        id="land2Status"
-        class="status normal">
-
-        ปกติ
-
-    </div>
-
-    <div class="chart-box">
-
-        <canvas id="land2Chart"></canvas>
-
-    </div>
-
-</div>
-
-</section>
-
-<!-- ================= SUMMARY ================= -->
+setInterval(loadData,10000);
+loadData();
+<!-- ===================== -->
+<!-- SUMMARY -->
+<!-- ===================== -->
 
 <section class="summary">
 
-<div class="summary-card">
+    <div class="info-card">
 
-<h3>
+        <h2>📊 ข้อมูลล่าสุด</h2>
 
-ข้อมูลล่าสุด
+        <table>
 
-</h3>
+            <tr>
+                <td>เวลาอัปเดต</td>
+                <td id="lastTime">--</td>
+            </tr>
 
-<table>
+            <tr>
+                <td>Latitude</td>
+                <td id="lastLat">--</td>
+            </tr>
 
-<tr>
+            <tr>
+                <td>Longitude</td>
+                <td id="lastLng">--</td>
+            </tr>
 
-<td>เวลา</td>
+            <tr>
+                <td>Satellite</td>
+                <td id="lastSat">0</td>
+            </tr>
 
-<td id="lastTime">
+            <tr>
+                <td>ระดับน้ำ</td>
+                <td>
+                    <span id="lastDistance">0.00</span> เมตร
+                </td>
+            </tr>
 
--
+        </table>
 
-</td>
+    </div>
 
-</tr>
+    <div class="map-card">
 
-<tr>
+        <h2>📍 ตำแหน่งล่าสุด</h2>
 
-<td>Latitude</td>
+        <div id="map"></div>
 
-<td id="lastLat">
-
--
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>Longitude</td>
-
-<td id="lastLng">
-
--
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>Satellites</td>
-
-<td id="lastSat">
-
--
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>ระดับน้ำ</td>
-
-<td id="lastDistance">
-
--
-
-</td>
-
-</tr>
-
-</table>
-
-</div>
-
-<div class="summary-card">
-
-<h3>
-
-แผนที่ตำแหน่งล่าสุด
-
-</h3>
-
-<iframe
-
-id="mapFrame"
-
-width="100%"
-
-height="350"
-
-style="border-radius:15px;border:none;"
-
-loading="lazy"
-
-allowfullscreen>
-
-</iframe>
-
-</div>
+    </div>
 
 </section>
 
-<!-- ================= HISTORY TABLE ================= -->
+<!-- ===================== -->
+<!-- HISTORY -->
+<!-- ===================== -->
 
 <section class="history">
 
-<h2>
+    <h2>ข้อมูลย้อนหลัง</h2>
 
-ข้อมูลย้อนหลัง
+    <table id="historyTable">
 
-</h2>
+        <thead>
 
-<div class="table-box">
+            <tr>
 
-<table id="historyTable">
+                <th>เวลา</th>
 
-<thead>
+                <th>ระดับน้ำ (m)</th>
 
-<tr>
+                <th>Latitude</th>
 
-<th>เวลา</th>
+                <th>Longitude</th>
 
-<th>ระดับน้ำ (m)</th>
+                <th>Satellite</th>
 
-<th>Latitude</th>
+            </tr>
 
-<th>Longitude</th>
+        </thead>
 
-<th>Satellite</th>
+        <tbody>
 
-</tr>
+        </tbody>
 
-</thead>
-
-<tbody>
-
-</tbody>
-
-</table>
-
-</div>
+    </table>
 
 </section>
 
-<!-- END PART 2 -->
-  <!-- ================= FOOTER ================= -->
-
-<footer class="footer">
-
-    <div class="footer-left">
-
-        <h3>🌊 RMUTL Flood Monitor</h3>
-
-        <p>
-            ระบบตรวจวัดระดับน้ำในแม่น้ำและพื้นที่น้ำท่วม
-        </p>
-
-        <p>
-            Rajamangala University of Technology Lanna
-        </p>
-
-    </div>
-
-    <div class="footer-right">
-
-        <div class="system-status">
-
-            <span class="status-dot"></span>
-
-            ระบบออนไลน์
-
-        </div>
-
-        <div>
-
-            อัปเดตล่าสุด
-
-            <span id="updateTime">
-
-                --
-
-            </span>
-
-        </div>
-
-    </div>
-
-</footer>
-
-<!-- ================= Loading ================= -->
+<!-- ===================== -->
+<!-- LOADING -->
+<!-- ===================== -->
 
 <div id="loading" class="loading">
 
-    <div class="spinner"></div>
+    <div class="loader"></div>
 
     <p>
 
@@ -498,19 +175,66 @@ allowfullscreen>
 
 </div>
 
-<!-- ================= Notification ================= -->
+<!-- END PART 2 -->
+<!-- ===================== -->
+<!-- FOOTER -->
+<!-- ===================== -->
+
+<footer>
+
+    <div class="footer-left">
+
+        <h3>RMUTL Flood Monitoring Dashboard</h3>
+
+        <p>
+            ระบบติดตามระดับน้ำแบบ Real-time
+        </p>
+
+    </div>
+
+    <div class="footer-right">
+
+        <p>
+
+            สถานะระบบ
+
+            <span class="online">
+
+                ● ONLINE
+
+            </span>
+
+        </p>
+
+        <p>
+
+            อัปเดตล่าสุด :
+
+            <span id="updateTime">
+
+                --
+
+            </span>
+
+        </p>
+
+    </div>
+
+</footer>
+
+<!-- ===================== -->
+<!-- NOTIFICATION -->
+<!-- ===================== -->
 
 <div id="notify" class="notify">
 
-    <span id="notifyText">
-
-        โหลดข้อมูลสำเร็จ
-
-    </span>
+    โหลดข้อมูลสำเร็จ
 
 </div>
 
-<!-- ================= JavaScript ================= -->
+<!-- ===================== -->
+<!-- JAVASCRIPT -->
+<!-- ===================== -->
 
 <script src="script.js"></script>
 
