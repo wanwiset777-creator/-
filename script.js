@@ -1,22 +1,22 @@
 // ======================================
-// RMUTL FLOOD MONITOR
+// RMUTL FLOOD MONITOR DASHBOARD V2
 // ======================================
 
-// ===== Apps Script =====
 const API_URL =
 "https://script.google.com/macros/s/AKfycbxVn_4dimc2nIuRkYIyQq6562--1chPWzX6preYVj0dooyY8BqiXEQnn-5nqAytjp4B/exec";
-
-const MAX_HISTORY = 20;
 
 let riverChart;
 let map;
 let marker;
 
+let allHistory = [];
+let currentHistory = [];
+
 // ======================================
 // START
 // ======================================
 
-window.addEventListener("load", () => {
+window.addEventListener("load",()=>{
 
     createChart();
 
@@ -28,7 +28,7 @@ window.addEventListener("load", () => {
 
     setInterval(updateClock,1000);
 
-    setInterval(loadData,10000);
+    setInterval(loadData,60000);
 
 });
 
@@ -38,32 +38,29 @@ window.addEventListener("load", () => {
 
 function updateClock(){
 
-    const now = new Date();
-
-    const txt = now.toLocaleString("th-TH");
-
-    const el = document.getElementById("clock");
-
-    if(el){
-
-        el.innerHTML = txt;
-
-    }
+    document.getElementById("clock").innerHTML=
+    new Date().toLocaleString("th-TH");
 
 }
 
 // ======================================
-// CHART
+// CREATE CHART
 // ======================================
 
 function createChart(){
 
-    const ctx =
-    document.getElementById("riverChart");
+    const canvas=document.getElementById("riverChart");
 
-    if(!ctx) return;
+    const ctx=canvas.getContext("2d");
 
-    riverChart = new Chart(ctx,{
+    const gradient=
+    ctx.createLinearGradient(0,0,0,350);
+
+    gradient.addColorStop(0,"rgba(37,99,235,.45)");
+    gradient.addColorStop(.6,"rgba(59,130,246,.20)");
+    gradient.addColorStop(1,"rgba(255,255,255,0)");
+
+    riverChart=new Chart(ctx,{
 
         type:"line",
 
@@ -77,17 +74,25 @@ function createChart(){
 
                 data:[],
 
-                borderColor:"#1d4ed8",
+                borderColor:"#2563eb",
 
-                backgroundColor:"rgba(59,130,246,.15)",
+                backgroundColor:gradient,
 
                 fill:true,
 
-                tension:.4,
+                borderWidth:4,
 
-                borderWidth:3,
+                tension:.45,
 
-                pointRadius:3
+                pointRadius:4,
+
+                pointHoverRadius:7,
+
+                pointBackgroundColor:"#ffffff",
+
+                pointBorderColor:"#2563eb",
+
+                pointBorderWidth:2
 
             }]
 
@@ -99,6 +104,15 @@ function createChart(){
 
             maintainAspectRatio:false,
 
+            interaction:{
+                mode:"index",
+                intersect:false
+            },
+
+            animation:{
+                duration:1200
+            },
+
             plugins:{
 
                 legend:{
@@ -109,8 +123,24 @@ function createChart(){
 
             scales:{
 
+                x:{
+
+                    grid:{
+                        display:false
+                    }
+
+                },
+
                 y:{
-                    beginAtZero:true
+
+                    beginAtZero:true,
+
+                    ticks:{
+
+                        callback:(v)=>v+" m"
+
+                    }
+
                 }
 
             }
@@ -122,72 +152,36 @@ function createChart(){
 }
 
 // ======================================
-// MAP
-// ======================================
-
-function createMap(){
-
-    const div = document.getElementById("map");
-
-    if(!div) return;
-
-    map = L.map("map").setView(
-        [18.79038,98.98468],
-        16
-    );
-
-    L.tileLayer(
-
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-
-        {
-
-            attribution:"© OpenStreetMap"
-
-        }
-
-    ).addTo(map);
-
-    marker = L.marker(
-
-        [18.79038,98.98468]
-
-    ).addTo(map);
-
-}
-// ======================================
-// LOAD DATA FROM GOOGLE SHEETS
+// LOAD DATA
 // ======================================
 
 async function loadData(){
 
+    showLoading(true);
+
     try{
 
-        const response = await fetch(
-            API_URL + "?t=" + Date.now()
-        );
+        const res=await fetch(API_URL+"?t="+Date.now());
 
-        if(!response.ok){
+        allHistory=await res.json();
 
-            throw new Error("HTTP Error");
+        if(!Array.isArray(allHistory)) return;
 
-        }
+        currentHistory=[...allHistory];
 
-        const history = await response.json();
+        const latest=currentHistory[currentHistory.length-1];
 
-        if(!Array.isArray(history)) return;
+        updateDashboard(latest);
 
-        if(history.length===0) return;
+        updateChart(currentHistory);
 
-        const latest = history[history.length-1];
+        updateHistoryTable(currentHistory);
 
-        updateStation01(latest);
-
-        updateChart(history);
-
-        updateTable(history);
+        updateSummary(currentHistory);
 
         updateMap(latest);
+
+        showNotify("อัปเดตข้อมูลล่าสุดแล้ว");
 
     }
 
@@ -197,145 +191,130 @@ async function loadData(){
 
     }
 
+    finally{
+
+        showLoading(false);
+
+    }
+
 }
 
 // ======================================
-// STATION 01
+// SEARCH BY DATE
 // ======================================
 
-function updateStation01(data){
+function searchHistory(){
 
-    const distance =
-        parseFloat(data.distance) || 0;
+    const value=
+    document.getElementById("historyDate").value;
 
-    const time =
-        new Date(data.time).toLocaleString("th-TH");
+    if(value===""){
 
-    const lat =
-        parseFloat(data.latitude) || 0;
+        loadData();
 
-    const lng =
-        parseFloat(data.longitude) || 0;
-
-    const sat =
-        parseInt(data.satellites) || 0;
-
-    // ระดับน้ำ
-
-    const river =
-        document.getElementById("riverValue");
-
-    if(river){
-
-        river.innerHTML =
-            distance.toFixed(2);
+        return;
 
     }
 
-    // เวลา
+    currentHistory=
 
-    const update =
-        document.getElementById("updateTime");
+    allHistory.filter(item=>{
 
-    if(update){
+        return item.time.startsWith(value);
 
-        update.innerHTML = time;
+    });
 
-    }
+    if(currentHistory.length===0){
 
-    const lastTime =
-        document.getElementById("lastTime");
+        alert("ไม่พบข้อมูล");
 
-    if(lastTime){
-
-        lastTime.innerHTML = time;
+        return;
 
     }
 
-    // พิกัด
+    updateChart(currentHistory);
 
-    const lastLat =
-        document.getElementById("lastLat");
+    updateHistoryTable(currentHistory);
 
-    if(lastLat){
+    updateSummary(currentHistory);
 
-        lastLat.innerHTML =
-            lat.toFixed(6);
+}
 
-    }
+// ======================================
+// TODAY
+// ======================================
 
-    const lastLng =
-        document.getElementById("lastLng");
+function loadToday(){
 
-    if(lastLng){
+    document.getElementById("historyDate").value="";
 
-        lastLng.innerHTML =
-            lng.toFixed(6);
+    loadData();
 
-    }
+}
+// ======================================
+// UPDATE DASHBOARD
+// ======================================
 
-    const lastSat =
-        document.getElementById("lastSat");
+function updateDashboard(data){
 
-    if(lastSat){
+    const distance = Number(data.distance) || 0;
+    const lat = Number(data.latitude) || 0;
+    const lng = Number(data.longitude) || 0;
+    const sat = Number(data.satellites) || 0;
 
-        lastSat.innerHTML = sat;
+    const time = new Date(data.time)
+    .toLocaleString("th-TH");
 
-    }
+    document.getElementById("riverValue").innerHTML =
+    distance.toFixed(2);
 
-    // ระดับน้ำล่าสุด
+    document.getElementById("lastDistance").innerHTML =
+    distance.toFixed(2);
 
-    const lastDistance =
-        document.getElementById("lastDistance");
+    document.getElementById("lastTime").innerHTML =
+    time;
 
-    if(lastDistance){
+    document.getElementById("updateTime").innerHTML =
+    time;
 
-        lastDistance.innerHTML =
-            distance.toFixed(2);
+    document.getElementById("lastLat").innerHTML =
+    lat.toFixed(6);
 
-    }
+    document.getElementById("lastLng").innerHTML =
+    lng.toFixed(6);
 
-    // ==================================
-    // STATUS
-    // ==================================
+    document.getElementById("lastSat").innerHTML =
+    sat;
 
     const status =
-        document.getElementById("riverStatus");
+    document.getElementById("riverStatus");
 
-    if(status){
+    if(distance < 2){
 
-        if(distance < 2){
+        status.className="status normal";
 
-            status.innerHTML = "ปกติ";
+        status.innerHTML="🟢 ปกติ";
 
-            status.className =
-            "status normal";
+    }
 
-        }
+    else if(distance < 4){
 
-        else if(distance < 4){
+        status.className="status warning";
 
-            status.innerHTML =
-            "เฝ้าระวัง";
+        status.innerHTML="🟡 เฝ้าระวัง";
 
-            status.className =
-            "status warning";
+    }
 
-        }
+    else{
 
-        else{
+        status.className="status danger";
 
-            status.innerHTML =
-            "อันตราย";
-
-            status.className =
-            "status danger";
-
-        }
+        status.innerHTML="🔴 อันตราย";
 
     }
 
 }
+
 // ======================================
 // UPDATE CHART
 // ======================================
@@ -344,21 +323,24 @@ function updateChart(history){
 
     if(!riverChart) return;
 
-    const data = history.slice(-MAX_HISTORY);
-
-    const labels = data.map(item => {
+    const labels =
+    history.map(item=>{
 
         return new Date(item.time)
-            .toLocaleTimeString("th-TH",{
-                hour:"2-digit",
-                minute:"2-digit"
-            });
+        .toLocaleTimeString("th-TH",{
+
+            hour:"2-digit",
+
+            minute:"2-digit"
+
+        });
 
     });
 
-    const values = data.map(item =>
+    const values =
+    history.map(item=>
 
-        parseFloat(item.distance) || 0
+        Number(item.distance)||0
 
     );
 
@@ -371,21 +353,67 @@ function updateChart(history){
 }
 
 // ======================================
-// UPDATE MAP
+// SUMMARY
+// ======================================
+
+function updateSummary(history){
+
+    if(history.length===0) return;
+
+    const values =
+    history.map(i=>Number(i.distance)||0);
+
+    const max =
+    Math.max(...values);
+
+    const min =
+    Math.min(...values);
+
+    const avg =
+    values.reduce(
+
+        (a,b)=>a+b,0
+
+    )/values.length;
+
+    document.getElementById("maxValue")
+    .innerHTML=max.toFixed(2);
+
+    document.getElementById("minValue")
+    .innerHTML=min.toFixed(2);
+
+    document.getElementById("avgValue")
+    .innerHTML=avg.toFixed(2);
+
+    document.getElementById("historyMax")
+    .innerHTML=max.toFixed(2);
+
+    document.getElementById("historyMin")
+    .innerHTML=min.toFixed(2);
+
+    document.getElementById("historyAvg")
+    .innerHTML=avg.toFixed(2);
+
+    document.getElementById("historyCount")
+    .innerHTML=history.length;
+
+}
+
+// ======================================
+// MAP
 // ======================================
 
 function updateMap(data){
 
-    if(!map || !marker) return;
+    if(!map) return;
 
-    const lat = parseFloat(data.latitude);
+    const lat =
+    Number(data.latitude);
 
-    const lng = parseFloat(data.longitude);
+    const lng =
+    Number(data.longitude);
 
-    // ถ้ายังไม่มี GPS ไม่ต้องย้าย Marker
-    if(isNaN(lat) || isNaN(lng)) return;
-
-    if(lat===0 && lng===0) return;
+    if(lat===0 || lng===0) return;
 
     marker.setLatLng([lat,lng]);
 
@@ -393,169 +421,32 @@ function updateMap(data){
 
         `
         <b>Station 01</b><br>
-        ระดับน้ำ : ${Number(data.distance).toFixed(2)} m
+
+        ระดับน้ำ :
+        ${Number(data.distance).toFixed(2)} m
+
+        <br>
+
+        Satellite :
+        ${data.satellites}
         `
 
     );
 
-    map.setView([lat,lng],16);
+    map.setView(
 
-}
+        [lat,lng],
 
-// ======================================
-// HISTORY TABLE
-// ======================================
+        16,
 
-function updateTable(history){
+        {
 
-    const tbody =
-        document.querySelector("#historyTable tbody");
+            animate:true,
 
-    if(!tbody) return;
-
-    tbody.innerHTML = "";
-
-    history
-        .slice()
-        .reverse()
-        .forEach(item=>{
-
-            const tr =
-                document.createElement("tr");
-
-            tr.innerHTML =
-
-            `
-            <td>${new Date(item.time).toLocaleString("th-TH")}</td>
-
-            <td>${Number(item.distance).toFixed(2)}</td>
-
-            <td>${Number(item.latitude).toFixed(6)}</td>
-
-            <td>${Number(item.longitude).toFixed(6)}</td>
-
-            <td>${item.satellites}</td>
-            `;
-
-            tbody.appendChild(tr);
-
-        });
-
-}
-// ======================================
-// LOADING
-// ======================================
-
-function showLoading(show){
-
-    const loading = document.getElementById("loading");
-
-    if(!loading) return;
-
-    loading.style.display = show ? "flex" : "none";
-
-}
-
-// ======================================
-// NOTIFICATION
-// ======================================
-
-function showNotify(message){
-
-    const notify = document.getElementById("notify");
-
-    if(!notify) return;
-
-    notify.innerHTML = message;
-
-    notify.style.display = "block";
-
-    setTimeout(()=>{
-
-        notify.style.display = "none";
-
-    },3000);
-
-}
-
-// ======================================
-// CHECK INTERNET
-// ======================================
-
-window.addEventListener("online",()=>{
-
-    showNotify("เชื่อมต่ออินเทอร์เน็ตแล้ว");
-
-});
-
-window.addEventListener("offline",()=>{
-
-    showNotify("ไม่มีการเชื่อมต่ออินเทอร์เน็ต");
-
-});
-
-// ======================================
-// AUTO REFRESH MESSAGE
-// ======================================
-
-let previousTime = "";
-
-setInterval(async ()=>{
-
-    try{
-
-        const response = await fetch(API_URL+"?t="+Date.now());
-
-        const history = await response.json();
-
-        if(!Array.isArray(history)) return;
-
-        if(history.length===0) return;
-
-        const latest = history[history.length-1];
-
-        if(previousTime===""){
-
-            previousTime = latest.time;
-
-            return;
+            duration:1
 
         }
 
-        if(previousTime !== latest.time){
+    );
 
-            previousTime = latest.time;
-
-            showNotify("อัปเดตข้อมูลล่าสุดแล้ว");
-
-        }
-
-    }
-
-    catch(err){
-
-        console.log(err);
-
-    }
-
-},10000);
-
-// ======================================
-// START MESSAGE
-// ======================================
-
-console.clear();
-
-console.log("===================================");
-
-console.log("RMUTL Flood Monitoring Dashboard");
-
-console.log("Station 01 : Connected");
-
-console.log("Google Sheets : Connected");
-
-console.log("Chart.js : Ready");
-
-console.log("Leaflet : Ready");
-
-console.log("===================================");
+}
