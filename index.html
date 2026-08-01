@@ -4,10 +4,9 @@
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RMUTL Flood Monitoring Dashboard</title>
+<title>RMUTL Flood Monitoring Dashboard V2</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -15,6 +14,9 @@
 href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -26,7 +28,9 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <div class="logo">
 
-🌊 RMUTL Flood Monitoring Dashboard
+<i class="fa-solid fa-water"></i>
+
+RMUTL Flood Monitoring Dashboard
 
 </div>
 
@@ -42,7 +46,7 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <h1>
 
-ระบบตรวจวัดระดับน้ำแบบ Real-time
+Flood Monitoring System
 
 </h1>
 
@@ -56,11 +60,7 @@ Rajamangala University of Technology Lanna
 
 <section class="dashboard">
 
-<!-- ====================== -->
-<!-- STATION 01 -->
-<!-- ====================== -->
-
-<div class="card">
+<div class="card station-card">
 
 <div class="station blue">
 
@@ -70,11 +70,11 @@ STATION 01
 
 <h2>
 
-ระดับน้ำในแม่น้ำ
+ระดับน้ำปัจจุบัน
 
 </h2>
 
-<div class="value">
+<div class="big-value">
 
 <span id="riverValue">
 
@@ -86,171 +86,269 @@ STATION 01
 
 </div>
 
-<div id="riverStatus" class="status normal">
+<div id="riverStatus"
+
+class="status normal">
 
 กำลังโหลด...
 
 </div>
 
+<div class="mini-summary">
+
+<div>
+
+<h4>สูงสุด</h4>
+
+<span id="maxValue">
+
+0.00
+
+</span>
+
+</div>
+
+<div>
+
+<h4>ต่ำสุด</h4>
+
+<span id="minValue">
+
+0.00
+
+</span>
+
+</div>
+
+<div>
+
+<h4>เฉลี่ย</h4>
+
+<span id="avgValue">
+
+0.00
+
+</span>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>
+
+กราฟระดับน้ำ
+
+</h2>
+
 <canvas id="riverChart"></canvas>
 
 </div>
 
-<!-- ====================== -->
-<!-- STATION 02 -->
-<!-- ====================== -->
-
-<div class="card">
-
-<div class="station green">
-
-STATION 02
-
-</div>
-
-<h2>
-
-พื้นที่น้ำท่วม จุดที่ 1
-
-</h2>
-
-<div class="value">
-
-<span id="land1Value">
-
-0.00
-
-</span>
-
-เมตร
-
-</div>
-
-<div class="status gray">
-
-ยังไม่ติดตั้ง
-
-</div>
-
-<canvas id="land1Chart"></canvas>
-
-</div>
-
-<!-- ====================== -->
-<!-- STATION 03 -->
-<!-- ====================== -->
-
-<div class="card">
-
-<div class="station orange">
-
-STATION 03
-
-</div>
-
-<h2>
-
-พื้นที่น้ำท่วม จุดที่ 2
-
-</h2>
-
-<div class="value">
-
-<span id="land2Value">
-
-0.00
-
-</span>
-
-เมตร
-
-</div>
-
-<div class="status gray">
-
-ยังไม่ติดตั้ง
-
-</div>
-
-<canvas id="land2Chart"></canvas>
-
-</div>
-
 </section>
-<!-- ===================================== -->
-<!-- SUMMARY -->
-<!-- ===================================== -->
 
 <section class="summary">
 
-    <!-- ข้อมูลล่าสุด -->
-    <div class="info-card">
+<div class="info-card">
 
-        <h2>📊 ข้อมูลล่าสุด</h2>
+<h2>
 
-        <table class="info-table">
+ข้อมูลล่าสุด
 
-            <tr>
-                <td>🕒 เวลาอัปเดต</td>
-                <td id="lastTime">--</td>
-            </tr>
+</h2>
 
-            <tr>
-                <td>📍 Latitude</td>
-                <td id="lastLat">--</td>
-            </tr>
+<table class="info-table">
 
-            <tr>
-                <td>📍 Longitude</td>
-                <td id="lastLng">--</td>
-            </tr>
+<tr>
 
-            <tr>
-                <td>🛰️ จำนวนดาวเทียม</td>
-                <td id="lastSat">0</td>
-            </tr>
+<td>เวลา</td>
 
-            <tr>
-                <td>🌊 ระดับน้ำ</td>
-                <td>
-                    <span id="lastDistance">0.00</span>
-                    เมตร
-                </td>
-            </tr>
+<td id="lastTime">--</td>
 
-        </table>
+</tr>
 
-    </div>
+<tr>
 
-    <!-- แผนที่ -->
-    <div class="map-card">
+<td>Latitude</td>
 
-        <h2>📍 ตำแหน่ง Station 01</h2>
+<td id="lastLat">--</td>
 
-        <div id="map"></div>
+</tr>
 
-    </div>
+<tr>
+
+<td>Longitude</td>
+
+<td id="lastLng">--</td>
+
+</tr>
+
+<tr>
+
+<td>Satellite</td>
+
+<td id="lastSat">0</td>
+
+</tr>
+
+<tr>
+
+<td>ระดับน้ำ</td>
+
+<td>
+
+<span id="lastDistance">
+
+0.00
+
+</span>
+
+เมตร
+
+</td>
+
+</tr>
+
+</table>
+
+</div>
+
+<div class="map-card">
+
+<h2>
+
+ตำแหน่ง Station 01
+
+</h2>
+
+<div id="map"></div>
+
+</div>
 
 </section>
 
-<!-- ===================================== -->
-<!-- HISTORY -->
-<!-- ===================================== -->
-
 <section class="history">
 
-    <div class="history-header">
+<div class="history-header">
 
-        <h2>📋 ข้อมูลย้อนหลัง</h2>
+<h2>
 
-        <button onclick="loadData()">
+ข้อมูลย้อนหลัง
 
-            รีเฟรชข้อมูล
+</h2>
 
-        </button>
+<div class="history-tools">
 
-    </div>
+<input
 
+type="date"
+
+id="historyDate">
+
+<button
+
+onclick="searchHistory()">
+
+ค้นหา
+
+</button>
+
+<button
+
+onclick="loadToday()">
+
+วันนี้
+
+</button>
+
+</div>
+
+</div>
+
+<div class="history-summary">
+
+<div class="history-box">
+
+<h3>
+
+จำนวนข้อมูล
+
+</h3>
+
+<p id="historyCount">
+
+0
+
+</p>
+
+</div>
+
+<div class="history-box">
+
+<h3>
+
+สูงสุด
+
+</h3>
+
+<p id="historyMax">
+
+0.00
+
+</p>
+
+</div>
+
+<div class="history-box">
+
+<h3>
+
+ต่ำสุด
+
+</h3>
+
+<p id="historyMin">
+
+0.00
+
+</p>
+
+</div>
+
+<div class="history-box">
+
+<h3>
+
+เฉลี่ย
+
+</h3>
+
+<p id="historyAvg">
+
+0.00
+
+</p>
+
+</div>
+
+</div>
+
+<button
+
+class="toggleTable"
+
+onclick="toggleHistory()">
+
+แสดงข้อมูลย้อนหลัง
+
+</button>
+
+<div id="historyArea"
+
+style="display:none;">
     <table id="historyTable">
 
         <thead>
@@ -277,78 +375,185 @@ STATION 03
 
     </table>
 
-</section>
+</div>
 
-<!-- ===================================== -->
-<!-- LOADING -->
-<!-- ===================================== -->
+<div class="history-action">
 
-<div id="loading" class="loading">
+<button
+class="export-btn"
+onclick="exportCSV()">
 
-    <div class="loader"></div>
+<i class="fa-solid fa-file-csv"></i>
 
-    <p>
+Export CSV
 
-        กำลังโหลดข้อมูล...
+</button>
 
-    </p>
+<button
+class="image-btn"
+onclick="downloadChart()">
+
+<i class="fa-solid fa-image"></i>
+
+Download Graph
+
+</button>
+
+<button
+class="refresh-btn"
+onclick="loadData()">
+
+<i class="fa-solid fa-rotate-right"></i>
+
+Refresh
+
+</button>
 
 </div>
-<!-- ===================================== -->
-<!-- FOOTER -->
-<!-- ===================================== -->
+
+</section>
+
+<section class="station-list">
+
+<div class="station-card-small">
+
+<div class="station blue">
+
+STATION 01
+
+</div>
+
+<div class="station-info">
+
+<h3>แม่น้ำปิง</h3>
+
+<p>
+
+สถานะ :
+
+<span id="status01">
+
+ONLINE
+
+</span>
+
+</p>
+
+</div>
+
+</div>
+
+<div class="station-card-small">
+
+<div class="station green">
+
+STATION 02
+
+</div>
+
+<div class="station-info">
+
+<h3>พื้นที่น้ำท่วม จุดที่ 1</h3>
+
+<p>
+
+ยังไม่ติดตั้ง
+
+</p>
+
+</div>
+
+</div>
+
+<div class="station-card-small">
+
+<div class="station orange">
+
+STATION 03
+
+</div>
+
+<div class="station-info">
+
+<h3>พื้นที่น้ำท่วม จุดที่ 2</h3>
+
+<p>
+
+ยังไม่ติดตั้ง
+
+</p>
+
+</div>
+
+</div>
+
+</section>
 
 <footer>
 
-    <div class="footer-left">
+<div class="footer-left">
 
-        <h3>RMUTL Flood Monitoring Dashboard</h3>
+<h3>
 
-        <p>
-            ระบบตรวจวัดระดับน้ำแบบ Real-time
-        </p>
+RMUTL Flood Monitoring Dashboard
 
-    </div>
+</h3>
 
-    <div class="footer-right">
+<p>
 
-        <div class="system-status">
+Real-time Water Level Monitoring System
 
-            <span class="online-dot"></span>
-
-            <span>ONLINE</span>
-
-        </div>
-
-        <p>
-
-            อัปเดตล่าสุด :
-
-            <span id="updateTime">
-
-                --
-
-            </span>
-
-        </p>
-
-    </div>
-
-</footer>
-
-<!-- ===================================== -->
-<!-- NOTIFICATION -->
-<!-- ===================================== -->
-
-<div id="notify" class="notify">
-
-    โหลดข้อมูลสำเร็จ
+</p>
 
 </div>
 
-<!-- ===================================== -->
-<!-- SCRIPT -->
-<!-- ===================================== -->
+<div class="footer-right">
+
+<div class="system-status">
+
+<span class="online-dot"></span>
+
+ONLINE
+
+</div>
+
+<p>
+
+Last Update :
+
+<span id="updateTime">
+
+--
+
+</span>
+
+</p>
+
+</div>
+
+</footer>
+
+<div
+id="loading"
+class="loading">
+
+<div class="loader"></div>
+
+<p>
+
+กำลังโหลดข้อมูล...
+
+</p>
+
+</div>
+
+<div
+id="notify"
+class="notify">
+
+โหลดข้อมูลสำเร็จ
+
+</div>
 
 <script src="script.js"></script>
 
